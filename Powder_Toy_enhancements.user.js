@@ -3,8 +3,9 @@
 // @namespace   http://powdertoythings.co.uk/tptenhance
 // @description Fix and improve some things (mainly moderation tools) on powdertoy.co.uk
 // @include	 	http*://powdertoy.co.uk/*
-// @version		2.46
+// @version		2.47
 // @author		jacksonmj
+// @collaborator	LBPHacker
 // @license		GPL-3.0-or-later; http://www.gnu.org/copyleft/gpl.html
 // @grant       none
 // @downloadURL https://openuserjs.org/install/jacksonmj/Powder_Toy_enhancements.user.js
@@ -88,6 +89,7 @@ var tptenhance_init = function(){
 		getPageUsername:function()
 		{
 			if (window.location.pathname.toString().indexOf("/User/Moderation.html")!==-1 ||
+					window.location.pathname.toString().indexOf("/User/Votes.html")!==-1 ||
 					window.location.toString().indexOf("/User.html")!=-1 ||
 					window.location.toString().indexOf("/User/Saves.html")!=-1)
 				return $('.SubmenuTitle').text();
@@ -879,6 +881,10 @@ var tptenhance_init = function(){
 			moderationUrlByName:function(n)
 			{
 				return "/User/Moderation.html?Name="+encodeURIComponent(n);
+			},
+			votesUrlByName:function(n)
+			{
+				return "/User/Votes.html?Name="+encodeURIComponent(n);
 			},
 			profileUrlByName:function(n)
 			{
@@ -2218,6 +2224,21 @@ var tptenhance_init = function(){
 			}
 		},1);});
 	}
+	if (window.location.toString().indexOf("/Conversations/View.html")!=-1)
+	{
+		$(document).ready(function(){
+			var matches = window.location.toString().match(/ConvID=(.+)/);
+			if (matches)
+			{
+				if (tptenhance.isMod())
+				{
+					var id = parseInt(matches[1]);
+					var h1 = $('.Page h1');
+					h1.html('<a href="/Conversations/View.html?ConvID=' + String(id - 1) + '">«</a> <a href="/Conversations/View.html?ConvID=' + String(id + 1) + '">»</a> ' + h1.html());
+				}
+			}
+		});
+	}
 	if (window.location.toString().indexOf("/User.html")!=-1)
 	{
 		$(document).ready(function(){
@@ -2628,7 +2649,7 @@ var tptenhance_init = function(){
 			}
 		});
 	}
-	if (tptenhance.isMod() && (window.location.toString().indexOf("/User.html")!=-1 || window.location.toString().indexOf("/User/Saves.html")!=-1 || window.location.toString().indexOf("/User/Moderation.html")!=-1))
+	if (tptenhance.isMod() && (window.location.toString().indexOf("/User.html")!=-1 || window.location.toString().indexOf("/User/Saves.html")!=-1 || window.location.toString().indexOf("/User/Moderation.html")!=-1 || window.location.toString().indexOf("/User/Votes.html")!=-1))
 	{
 		$(document).ready(function(){
 			var username = tptenhance.getPageUsername();
@@ -2637,6 +2658,15 @@ var tptenhance_init = function(){
 				var tabElem = $('<li class=\"item\"><a>Published</a></li>');
 				tabElem.find("a").attr("href", tptenhance.saves.userSearchUrl(username));
 				tabElem.insertAfter($(".Pageheader .nav li:nth-child(2)"));
+				var tabElem2 = $('<li class=\"item\"><a>Votes</a></li>');
+				tabElem2.find("a").attr("href", tptenhance.users.votesUrlByName(username));
+				var last = $(".Pageheader .nav li:last-child");
+				tabElem2.insertAfter(last);
+				if (window.location.toString().indexOf("/User/Votes.html")!=-1) {
+					last.remove();
+					tabElem2[0].classList.remove('item');
+					tabElem2[0].classList.add('active');
+				}
 			}
 		});
 	}
@@ -2667,7 +2697,10 @@ var tptenhance_init = function(){
 					newTab(headerNav, "Saves", tptenhance.users.savesUrlByName(user));
 				}
 				if (tptenhance.isMod())
+				{
 					newTab(headerNav, "Moderation", tptenhance.users.moderationUrlByName(user));
+					newTab(headerNav, "Votes", tptenhance.users.votesUrlByName(user));
+				}
 				if (user===tptenhance.getAuthedUser())
 					headerNav.append('<li class="item"><a href="/Groups/Page/Index.html">Groups</a></li><li class="item"><a href="/Profile.html">Edit</a></li>');
 				$('#PageBrowse').prepend(header);
